@@ -1,0 +1,11 @@
+# Don't copy these into the image build context
+node_modules
+test-results
+test-output
+playwright-report
+playwright/.cache
+*.log
+.git
+.gitignore
+.DS_Store
+README.md

@@ -1,0 +1,19 @@
+{
+  "name": "k8s-test-runner",
+  "version": "0.1.0",
+  "description": "Playwright runner for distributed test execution on Kubernetes",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:trace": "playwright test --trace on"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.0",
+    "@types/node": "^25.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
