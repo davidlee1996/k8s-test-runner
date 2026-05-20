@@ -1,0 +1,90 @@
+{
+  "name": "k8s-test-runner",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  // Features add tooling on top of the base image. GitHub maintains these;
+  // they install at codespace creation time and persist across sessions.
+  "features": {
+    // Docker in Docker — lets us run Docker inside the codespace.
+    // Needed for: building images, running Kind, all the docker commands.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    },
+
+    // Kind for local Kubernetes
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "none",
+      "minikube": "none"
+    },
+
+    // Node 20 — matches our Dockerfile base
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+
+    // AWS CLI v2
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+
+    // Terraform — we'll need this in Phase 2
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest",
+      "tflint": "latest"
+    },
+
+    // Common shell utilities (envsubst lives in gettext, which is included here)
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "username": "vscode"
+    }
+  },
+
+  // Codespace machine size. 2-core is the free tier sweet spot.
+  // Override on a per-session basis via the GitHub UI if you need more horsepower.
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  // VS Code extensions to install in the codespace
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-playwright.playwright",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "hashicorp.terraform",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "yaml.schemas": {
+          "kubernetes": "k8s/*.yaml"
+        }
+      }
+    }
+  },
+
+  // Install kind (the binary) and run first-time setup.
+  // postCreateCommand runs ONCE when the codespace is first created.
+  // updateContentCommand runs whenever the .devcontainer changes.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  // Secrets to make available as environment variables inside the codespace.
+  // You'll configure their values in GitHub: Settings → Codespaces → Secrets.
+  "remoteEnv": {
+    "AWS_REGION": "us-east-1"
+  },
+
+  // Forward useful ports (Kind's API, local registry, etc.)
+  "forwardPorts": [],
+
+  // Run as the non-root vscode user (default in this base image)
+  "remoteUser": "vscode"
+}
