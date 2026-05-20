@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
-# build-and-load.sh
-#
-# Builds the runner image and loads it into the Kind cluster.
-#
-# Architecture: we no longer pin --platform. Docker picks the host arch
-# automatically. On Codespaces (x86_64), this builds amd64; on Apple Silicon
-# locally, it builds arm64. Both work.
-#
-# For multi-arch (Week 5, when we push to ECR for EKS), we'll add
-# --platform linux/amd64,linux/arm64 in a separate push script.
+# Build the runner image and load it into the Kind cluster.
+# No --platform flag — Docker picks the host arch (amd64 in Codespaces, arm64 on Apple Silicon).
 
 set -euo pipefail
 

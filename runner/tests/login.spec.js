@@ -1,44 +1,47 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { USERS } = require('./fixtures/users');
+const { getUserForThisRun } = require('./fixtures/users');
+
+const user = getUserForThisRun();
 
 /**
- * Login flow tests against saucedemo.com.
+ * Login tests, parameterized by the SAUCE_USER env var.
  *
- * Selector strategy: data-test attributes via getByTestId().
- * Sauce demo exposes data-test="..." on every interactive element.
- * These are stable across UI refactors.
+ * Behavior changes per user:
+ *   STANDARD            → login succeeds, lands on inventory
+ *   LOCKED_OUT          → login fails with "locked out" error
+ *   PROBLEM             → login succeeds (cart bugs surface later)
+ *   PERFORMANCE_GLITCH  → login succeeds, but takes ~5s
+ *
+ * The test asserts whichever outcome is contractually expected for this user.
+ * That's what makes per-user sharding meaningful.
  */
 
-test.describe('Login flow', () => {
+test.describe(`Login flow [${user.key}]`, () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
-  test('standard user can log in and reach inventory', async ({ page }) => {
-    const usernameInput = page.getByTestId('username');
-    const passwordInput = page.getByTestId('password');
-    const loginButton = page.getByTestId('login-button');
-
-    await usernameInput.fill(USERS.STANDARD.username);
-    await passwordInput.fill(USERS.STANDARD.password);
-    await loginButton.click();
-
-    await expect(page).toHaveURL(/.*inventory\.html/);
-    await expect(page.getByTestId('title')).toHaveText('Products');
-
-    const inventoryItems = page.getByTestId('inventory-item');
-    await expect(inventoryItems.first()).toBeVisible();
-    expect(await inventoryItems.count()).toBeGreaterThan(0);
-  });
-
-  test('locked-out user sees error message', async ({ page }) => {
-    await page.getByTestId('username').fill(USERS.LOCKED_OUT.username);
-    await page.getByTestId('password').fill(USERS.LOCKED_OUT.password);
+  test('login behaves as expected for this user', async ({ page }) => {
+    await page.getByTestId('username').fill(user.username);
+    await page.getByTestId('password').fill(user.password);
     await page.getByTestId('login-button').click();
 
-    const error = page.getByTestId('error');
-    await expect(error).toBeVisible();
-    await expect(error).toContainText('locked out');
+    if (user.expectations.canLogin) {
+      // Expect to reach the inventory page
+      await expect(page).toHaveURL(/.*inventory\.html/, { timeout: 15000 });
+      await expect(page.getByTestId('title')).toHaveText('Products');
+
+      const inventoryItems = page.getByTestId('inventory-item');
+      await expect(inventoryItems.first()).toBeVisible();
+      expect(await inventoryItems.count()).toBeGreaterThan(0);
+    } else {
+      // Expect login to fail with locked-out error
+      const error = page.getByTestId('error');
+      await expect(error).toBeVisible();
+      if (user.expectations.lockoutErrorVisible) {
+        await expect(error).toContainText('locked out');
+      }
+    }
   });
 });

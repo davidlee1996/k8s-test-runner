@@ -1,0 +1,82 @@
+# Kubernetes Job template for the Playwright test runner.
+#
+# This template is rendered once per SAUCE_USER (4 times for STANDARD, LOCKED_OUT,
+# PROBLEM, PERFORMANCE_GLITCH) by scripts/run-jobs.sh. Each rendered Job runs as
+# its own pod in parallel; all 4 pods share the same RUN_ID so the aggregator
+# can find their results together.
+#
+# Placeholders (replaced by envsubst in run-jobs.sh):
+#   ${SAUCE_USER_LOWER}  → lowercase user name for the Job name
+#   ${SAUCE_USER}        → uppercase user key (STANDARD, PROBLEM, etc.)
+#   ${RUN_ID}            → shared across all 4 Jobs in this run
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: playwright-${SAUCE_USER_LOWER}
+  labels:
+    app: k8s-test-runner
+    phase: "1"
+    week: "3"
+    run-id: "${RUN_ID}"
+    sauce-user: "${SAUCE_USER_LOWER}"
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: k8s-test-runner
+        run-id: "${RUN_ID}"
+        sauce-user: "${SAUCE_USER_LOWER}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: runner
+        image: k8s-test-runner:dev
+        imagePullPolicy: Never
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+        env:
+        # Pod identity (from K8s downward API)
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+
+        # Test parameterization
+        - name: SAUCE_USER
+          value: "${SAUCE_USER}"
+
+        # Shared run identifier (same value across all 4 Jobs in this batch)
+        - name: RUN_ID
+          value: "${RUN_ID}"
+
+        # S3 destination + AWS credentials (from K8s Secret)
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: S3_BUCKET
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_REGION
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: AWS_SECRET_ACCESS_KEY

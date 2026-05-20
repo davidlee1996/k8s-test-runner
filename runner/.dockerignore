@@ -1,4 +1,3 @@
-# Don't copy these into the image build context
 node_modules
 test-results
 test-output

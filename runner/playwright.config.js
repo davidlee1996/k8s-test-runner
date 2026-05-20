@@ -4,21 +4,15 @@ const { defineConfig, devices } = require('@playwright/test');
 /**
  * Playwright config for k8s-test-runner.
  *
- * Key choices for this project:
- * - testIdAttribute: 'data-test' — saucedemo uses data-test (not the default
- *   data-testid). Setting this lets us write `getByTestId('username')` cleanly.
- * - PLAYWRIGHT_OUTPUT_DIR env var: in the container, it's /test-output/playwright
- *   (a writable directory owned by pwuser). Locally, it falls back to ./test-results.
- * - JSON reporter: emits a structured results file we'll upload to S3 in Week 3.
- * - List reporter: human-readable output in stdout (visible via `kubectl logs`).
- * - workers: 1 inside each container. Parallelism comes from K8s Jobs running
- *   N pods in parallel, NOT from Playwright's internal worker pool.
- * - retries: 1. Containerized parallel runs should fail fast, not paper over flakiness.
- * - timeout: 30s per test. Sauce demo is fast; longer timeouts hide real problems.
+ * Key choices:
+ * - testIdAttribute: 'data-test' — saucedemo uses data-test (not data-testid).
+ *   Setting this lets getByTestId() find the elements.
+ * - PLAYWRIGHT_OUTPUT_DIR env var: in container, /test-output/playwright.
+ *   Locally, falls back to ./test-results.
+ * - workers: 1 inside each container. Parallelism comes from K8s, not Playwright.
+ * - retries: 1. Containerized parallel runs should fail fast.
  */
 
-// In the container, PLAYWRIGHT_OUTPUT_DIR is set to /test-output/playwright.
-// Locally, it's unset and falls back to ./test-results (gitignored).
 const OUTPUT_DIR = process.env.PLAYWRIGHT_OUTPUT_DIR || './test-results';
 
 module.exports = defineConfig({

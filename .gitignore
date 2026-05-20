@@ -2,12 +2,13 @@
 *.log
 *.tmp
 
-# OS / editor
 .vscode/
 .idea/
 
-# Terraform (used in later phases, ignore now to be safe)
 *.tfstate
 *.tfstate.backup
 .terraform/
 *.tfvars
+
+# Local-only AWS credentials (NEVER commit)
+.aws-credentials
